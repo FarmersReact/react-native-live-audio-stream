@@ -12,6 +12,8 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.imxiqi.rnliveaudiostream.G711;
+
 
 import java.lang.Math;
 
@@ -89,14 +91,17 @@ public class RNLiveAudioStreamModule extends ReactContextBaseJavaModule {
                     int bytesRead;
                     int count = 0;
                     String base64Data;
-                    byte[] buffer = new byte[bufferSize];
+                    // byte[] buffer = new byte[bufferSize];
+                    short[] inG711Buffer = new short[bufferSize];
+                    byte[] outG711Buffer = new byte[bufferSize];
 
                     while (isRecording) {
-                        bytesRead = recorder.read(buffer, 0, buffer.length);
+                        bytesRead = recorder.read(inG711Buffer, 0, bufferSize);
 
-                        // skip first 2 buffers to eliminate "click sound"
-                        if (bytesRead > 0 && ++count > 2) {
-                            base64Data = Base64.encodeToString(buffer, Base64.NO_WRAP);
+                        if (AudioRecord.ERROR_INVALID_OPERATION != bytesRead) {
+                            //转g711a
+                            G711.linear2alaw(inG711Buffer, 0, outG711Buffer, inG711Buffer.length);
+                            base64Data = Base64.encodeToString(outG711Buffer, Base64.NO_WRAP);
                             eventEmitter.emit("data", base64Data);
                         }
                     }
@@ -115,3 +120,4 @@ public class RNLiveAudioStreamModule extends ReactContextBaseJavaModule {
         isRecording = false;
     }
 }
+
